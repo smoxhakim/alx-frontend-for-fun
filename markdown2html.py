@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Markdown is awesome! """
 
+
 import sys
 import os
 
@@ -21,14 +22,33 @@ def main():
             lines = md_file.readlines()
 
         html_lines = []
+        in_list = False
+
         for line in lines:
             line = line.rstrip()
+
             if line.startswith('#'):
                 heading_level = line.count('#')
                 heading_text = line[heading_level:].strip()
                 html_line = f"<h{heading_level}>{heading_text}</h{heading_level}>"
                 html_lines.append(html_line)
+                in_list = False
 
+            elif line.startswith('-'):
+                if not in_list:
+                    html_lines.append("<ul>")
+                    in_list = True
+                
+                list_item_text = line[1:].strip()
+                html_lines.append(f"<li>{list_item_text}</li>")
+
+            else:
+                if in_list:
+                    html_lines.append("</ul>")
+                    in_list = False
+
+        if in_list:
+            html_lines.append("</ul>")
         with open(output_file, 'w') as out_file:
             out_file.write("\n".join(html_lines) + "\n")
 
