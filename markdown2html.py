@@ -5,6 +5,7 @@
 import sys
 import os
 
+
 def main():
     # Check if the number of arguments is less than 2
     if len(sys.argv) < 3:
@@ -28,6 +29,7 @@ def main():
         html_lines = []
         in_unordered_list = False  # Track whether we are inside an unordered list
         in_ordered_list = False    # Track whether we are inside an ordered list
+        paragraph_lines = []        # Collect lines for the current paragraph
 
         for line in lines:
             line = line.rstrip()  # Remove trailing whitespace
@@ -59,18 +61,26 @@ def main():
                 list_item_text = line[1:].strip()  # Get text after '*'
                 html_lines.append(f"<li>{list_item_text}</li>")
 
-            else:
-                if in_unordered_list:
-                    html_lines.append("</ul>")  # End the unordered list
-                    in_unordered_list = False
-                if in_ordered_list:
-                    html_lines.append("</ol>")  # End the ordered list
-                    in_ordered_list = False
+            # Handle paragraphs and line breaks
+            elif line.strip() == "":
+                if paragraph_lines:
+                    html_lines.append("<p>")
+                    html_lines.append("<br/>".join(paragraph_lines))  # Join lines with <br/>
+                    html_lines.append("</p>")
+                    paragraph_lines = []  # Reset for next paragraph
 
+            else:
+                paragraph_lines.append(line)  # Collect lines for the current paragraph
+
+        # Close any open lists or paragraphs at the end
         if in_unordered_list:
-            html_lines.append("</ul>")  # Close any open unordered list at the end
+            html_lines.append("</ul>")
         if in_ordered_list:
-            html_lines.append("</ol>")  # Close any open ordered list at the end
+            html_lines.append("</ol>")
+        if paragraph_lines:
+            html_lines.append("<p>")
+            html_lines.append("<br/>".join(paragraph_lines))
+            html_lines.append("</p>")
 
         # Write the generated HTML to the output file
         with open(output_file, 'w') as out_file:
