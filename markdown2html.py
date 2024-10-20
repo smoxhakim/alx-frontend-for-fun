@@ -4,6 +4,25 @@
 import sys
 import os
 import re
+import hashlib
+
+def md5_text(text):
+    """Convert text to MD5 hash (lowercase)"""
+    return hashlib.md5(text.encode()).hexdigest()
+
+def remove_c(text):
+    """Remove all 'c' characters (case insensitive) from text"""
+    return re.sub(r'[cC]', '', text)
+
+def process_special_syntax(text):
+    """Process MD5 and text removal syntax"""
+    # Process [[text]] for MD5 conversion
+    text = re.sub(r'\[\[([^\]]+)\]\]', lambda m: md5_text(m.group(1)), text)
+    
+    # Process ((text)) for removing 'c' characters
+    text = re.sub(r'\(\(([^\)]+)\)\)', lambda m: remove_c(m.group(1)), text)
+    
+    return text
 
 def process_bold_emphasis(text):
     """Process bold and emphasis markdown syntax in text"""
@@ -18,10 +37,12 @@ def process_paragraph(lines):
     if not lines:
         return ""
     
-    # Process each line for bold and emphasis
+    # Process each line for bold, emphasis, and special syntax
     formatted_lines = []
     for i, line in enumerate(lines):
-        # Process bold and emphasis syntax
+        # Process special syntax first (MD5 and text removal)
+        line = process_special_syntax(line)
+        # Then process bold and emphasis syntax
         line = process_bold_emphasis(line)
         
         if i < len(lines) - 1:  # Add <br /> for all lines except the last
@@ -61,7 +82,9 @@ def main():
                 
                 heading_level = line.count('#')
                 heading_text = line[heading_level:].strip()
-                # Process bold and emphasis in heading
+                # Process special syntax first
+                heading_text = process_special_syntax(heading_text)
+                # Then process bold and emphasis
                 heading_text = process_bold_emphasis(heading_text)
                 if heading_level < 7:
                     text.append(f"<h{heading_level}>{heading_text}</h{heading_level}>")
@@ -77,7 +100,9 @@ def main():
                     text.append("<ul>")
                     in_unordered_list = True
                 list_item_text = line[1:].strip()
-                # Process bold and emphasis in list items
+                # Process special syntax first
+                list_item_text = process_special_syntax(list_item_text)
+                # Then process bold and emphasis
                 list_item_text = process_bold_emphasis(list_item_text)
                 text.append(f"<li>{list_item_text}</li>")
 
@@ -92,7 +117,9 @@ def main():
                     text.append("<ol>")
                     in_ordered_list = True
                 list_item_text = line[1:].strip()
-                # Process bold and emphasis in list items
+                # Process special syntax first
+                list_item_text = process_special_syntax(list_item_text)
+                # Then process bold and emphasis
                 list_item_text = process_bold_emphasis(list_item_text)
                 text.append(f"<li>{list_item_text}</li>")
             
