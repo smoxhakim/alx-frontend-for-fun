@@ -3,15 +3,27 @@
 
 import sys
 import os
+import re
+
+def process_bold_emphasis(text):
+    """Process bold and emphasis markdown syntax in text"""
+    # Process bold syntax with **
+    text = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', text)
+    # Process emphasis syntax with __
+    text = re.sub(r'__([^_]+)__', r'<em>\1</em>', text)
+    return text
 
 def process_paragraph(lines):
     """Process a paragraph's lines and return the HTML representation"""
     if not lines:
         return ""
     
-    # If paragraph has multiple lines, join them with <br />
+    # Process each line for bold and emphasis
     formatted_lines = []
     for i, line in enumerate(lines):
+        # Process bold and emphasis syntax
+        line = process_bold_emphasis(line)
+        
         if i < len(lines) - 1:  # Add <br /> for all lines except the last
             formatted_lines.append(f"    {line}\n        <br />")
         else:
@@ -49,6 +61,8 @@ def main():
                 
                 heading_level = line.count('#')
                 heading_text = line[heading_level:].strip()
+                # Process bold and emphasis in heading
+                heading_text = process_bold_emphasis(heading_text)
                 if heading_level < 7:
                     text.append(f"<h{heading_level}>{heading_text}</h{heading_level}>")
             
@@ -63,6 +77,8 @@ def main():
                     text.append("<ul>")
                     in_unordered_list = True
                 list_item_text = line[1:].strip()
+                # Process bold and emphasis in list items
+                list_item_text = process_bold_emphasis(list_item_text)
                 text.append(f"<li>{list_item_text}</li>")
 
             # Check for ordered lists
@@ -76,6 +92,8 @@ def main():
                     text.append("<ol>")
                     in_ordered_list = True
                 list_item_text = line[1:].strip()
+                # Process bold and emphasis in list items
+                list_item_text = process_bold_emphasis(list_item_text)
                 text.append(f"<li>{list_item_text}</li>")
             
             else:
