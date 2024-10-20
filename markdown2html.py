@@ -1,11 +1,23 @@
 #!/usr/bin/python3
 """ Markdown is awesome! """
 
-
 import sys
 import os
 
-
+def process_paragraph(lines):
+    """Process a paragraph's lines and return the HTML representation"""
+    if not lines:
+        return ""
+    
+    # If paragraph has multiple lines, join them with <br />
+    formatted_lines = []
+    for i, line in enumerate(lines):
+        if i < len(lines) - 1:  # Add <br /> for all lines except the last
+            formatted_lines.append(f"    {line}\n        <br />")
+        else:
+            formatted_lines.append(f"    {line}")
+    
+    return "<p>\n{}\n</p>".format("\n".join(formatted_lines))
 
 def main():
     # Check if the number of arguments is less than 2
@@ -20,32 +32,50 @@ def main():
     text = []
     in_unordered_list = False
     in_ordered_list = False
+    current_paragraph = []
 
     with open(markdown_file, encoding='utf-8') as md_file:
-        for line in md_file:
+        lines = md_file.readlines()
+        
+        for line in lines:
             line = line.rstrip()  # Remove trailing whitespace
             
             # Check for headings
             if line.startswith('#'):
+                # Process any pending paragraph
+                if current_paragraph:
+                    text.append(process_paragraph(current_paragraph))
+                    current_paragraph = []
+                
                 heading_level = line.count('#')
-                heading_text = line[heading_level:].strip()  # Get text after hashes
-                if heading_level < 7:  # Ensure valid heading level (1-6)
+                heading_text = line[heading_level:].strip()
+                if heading_level < 7:
                     text.append(f"<h{heading_level}>{heading_text}</h{heading_level}>")
             
             # Check for unordered lists
             elif line.startswith('-'):
+                # Process any pending paragraph
+                if current_paragraph:
+                    text.append(process_paragraph(current_paragraph))
+                    current_paragraph = []
+                
                 if not in_unordered_list:
                     text.append("<ul>")
                     in_unordered_list = True
-                list_item_text = line[1:].strip()  # Get text after '-'
+                list_item_text = line[1:].strip()
                 text.append(f"<li>{list_item_text}</li>")
 
             # Check for ordered lists
             elif line.startswith('*'):
+                # Process any pending paragraph
+                if current_paragraph:
+                    text.append(process_paragraph(current_paragraph))
+                    current_paragraph = []
+                
                 if not in_ordered_list:
                     text.append("<ol>")
                     in_ordered_list = True
-                list_item_text = line[1:].strip()  # Get text after '*'
+                list_item_text = line[1:].strip()
                 text.append(f"<li>{list_item_text}</li>")
             
             else:
@@ -58,8 +88,16 @@ def main():
                     in_ordered_list = False
                 
                 # Handle paragraphs
-                if line.strip():  # Only add non-empty lines as paragraphs
-                    text.append(f"<p>{line}</p>")
+                if not line.strip():  # Empty line
+                    if current_paragraph:  # If we have a pending paragraph, process it
+                        text.append(process_paragraph(current_paragraph))
+                        current_paragraph = []
+                else:
+                    current_paragraph.append(line)
+        
+        # Process any remaining paragraph at the end of the file
+        if current_paragraph:
+            text.append(process_paragraph(current_paragraph))
         
         # Close any open lists at the end of the file
         if in_unordered_list:
